@@ -1,5 +1,5 @@
-import 'package:create_flutter_app/create_flutter_app.dart' as create_flutter_app;
+import 'package:create_flutter_app/create_flutter_app.dart';
 
 void main(List<String> arguments) {
-  print('Hello world: ${create_flutter_app.calculate()}!');
+  print('Hello world: ${calculate()}!');
 }

@@ -1,10 +1,14 @@
 name: create_flutter_app
-description: A sample command-line application.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+description: A CLI to scaffold Flutter projects with customizable setup.
+version: 0.0.1
+homepage: https://github.com/ani-sh-arma/create_flutter_app
+repository: https://github.com/ani-sh-arma/create_flutter_app
 
 environment:
   sdk: ^3.7.2
+
+executables:
+  create_flutter_app:
 
 # Add regular dependencies here.
 dependencies:

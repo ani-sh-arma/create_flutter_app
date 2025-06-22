@@ -1,3 +1,6 @@
+import 'dart:math';
+
 int calculate() {
-  return 6 * 7;
+  int randomNumber = Random().nextInt(100);
+  return randomNumber;
 }
