@@ -39,12 +39,30 @@ Future<Config> promptUserPreferences() async {
     (e) => e.name == routingChoice,
   );
 
-  final useFirebase = prompts.getBool('Use Firebase?', defaultsTo: false);
+  final useFlexColorScheme = prompts.getBool(
+    'Use flex_color_scheme for theming?',
+    defaultsTo: false,
+  );
+  final createLocalStorageService = prompts.getBool(
+    'Create a LocalStorageService using shared prefs?',
+    defaultsTo: false,
+  );
+  final initializeSizeUtils = prompts.getBool(
+    'Initialize SizeUtils for responsive design?',
+    defaultsTo: false,
+  );
+  final includeCommonCustomWidgets = prompts.getBool(
+    'Include Common Custom Widgets?',
+    defaultsTo: false,
+  );
 
   return Config(
     projectName: name,
     stateManagement: state,
     routing: routing,
-    useFirebase: useFirebase,
+    useFlexColorScheme: useFlexColorScheme,
+    createLocalStorageService: createLocalStorageService,
+    initializeSizeUtils: initializeSizeUtils,
+    includeCommonCustomWidgets: includeCommonCustomWidgets,
   );
 }
