@@ -1,7 +1,9 @@
 import 'package:create_flutter_app/cli.dart';
+import 'package:create_flutter_app/config.dart';
 
-void main(List<String> arguments) {
-  print('Hello world:');
+void main(List<String> arguments) async {
   print(arguments);
-  promptUserPreferences();
+  final Config config = await promptUserPreferences();
+
+  print(config);
 }

@@ -23,3 +23,16 @@ https://pub.dev/packages/create_flutter_app
 ```sh
 dart pub global activate create_flutter_app
 ```
+
+
+### The options for configuration provided by create_flutter_app are:
+
+- Project Name
+- State Management (none, provider, riverpod, bloc)
+- Routing (none, navigator2, goRouter, autoRoute)
+- Firebase (yes, no)
+- Select firebase services (firestore, auth, storage, messaging) only if firebase is set to true
+- Use flex_color_scheme for theming (yes, no)
+- Create a LocalStorageService using shared prefs (yes, no)
+- Initialize SizeUtils for responsive design (yes, no)
+- Include Common Custom Widgets (yes, no)
