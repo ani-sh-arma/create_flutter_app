@@ -51,8 +51,8 @@ Future<Config> promptUserPreferences() async {
     'Initialize SizeUtils for responsive design?',
     defaultsTo: false,
   );
-  final includeCommonCustomWidgets = prompts.getBool(
-    'Include Common Custom Widgets?',
+  final initializeDotEnv = prompts.getBool(
+    'Initialize DotEnv for environment variables?',
     defaultsTo: false,
   );
 
@@ -63,6 +63,6 @@ Future<Config> promptUserPreferences() async {
     useFlexColorScheme: useFlexColorScheme,
     createLocalStorageService: createLocalStorageService,
     initializeSizeUtils: initializeSizeUtils,
-    includeCommonCustomWidgets: includeCommonCustomWidgets,
+    initializeDotEnv: initializeDotEnv,
   );
 }

@@ -1,6 +1,6 @@
-enum StateManagementOption { none, provider, riverpod, bloc }
+enum StateManagementOption { none, provider, riverpod, bloc, getx }
 
-enum RoutingOption { none, navigator2, goRouter, autoRoute }
+enum RoutingOption { none, goRouter, autoRoute }
 
 class Config {
   final String projectName;
@@ -9,7 +9,7 @@ class Config {
   final bool useFlexColorScheme;
   final bool createLocalStorageService;
   final bool initializeSizeUtils;
-  final bool includeCommonCustomWidgets;
+  final bool initializeDotEnv;
 
   Config({
     required this.projectName,
@@ -18,7 +18,7 @@ class Config {
     required this.useFlexColorScheme,
     required this.createLocalStorageService,
     required this.initializeSizeUtils,
-    required this.includeCommonCustomWidgets,
+    required this.initializeDotEnv,
   });
 
   @override
@@ -30,7 +30,7 @@ class Config {
       Use FlexColorScheme: ${useFlexColorScheme ? "Yes" : "No"}
       Create LocalStorageService: ${createLocalStorageService ? "Yes" : "No"}
       Initialize SizeUtils: ${initializeSizeUtils ? "Yes" : "No"}
-      Include Common Custom Widgets: ${includeCommonCustomWidgets ? "Yes" : "No"}
+      Initialize DotEnv: ${initializeDotEnv ? "Yes" : "No"}
     ''';
   }
 }
