@@ -12,6 +12,22 @@ Future<void> scaffoldProject(Config config) async {
   await addDependencies(config);
   logInfo("Generating project files...");
   await generateProjectFiles(config);
+
+  logInfo("Formatting project...");
+  final projectDir = Directory(config.projectName);
+
+  final result = await Process.run(
+    'dart',
+    ['format', '.'],
+    runInShell: true,
+    workingDirectory: projectDir.path,
+  );
+
+  if (result.exitCode == 0) {
+    logInfo("[ Formatting Project ]\n${result.stdout}");
+  } else {
+    logError("[ Formatting Project Failed ]\n${result.stderr}");
+  }
   logSuccess("Project created successfully!");
 }
 
@@ -109,23 +125,63 @@ Future<void> addDependencies(Config config) async {
 Future<void> generateProjectFiles(Config config) async {
   final projectDir = Directory(config.projectName);
   final mainFile = File('${projectDir.path}/lib/main.dart');
-  final homePageFile = File('${projectDir.path}/lib/home_page.dart');
+  String mainImports = '';
 
   String mainFileContent = Templates.mainTemplate;
 
-  if (!config.createLocalStorageService &&
-      !config.initializeDotEnv &&
-      !config.initializeSizeUtils &&
-      !config.useFlexColorScheme &&
+  if (config.initializeDotEnv || config.createLocalStorageService) {
+    mainFileContent = mainFileContent.replaceAll('{{async}}', 'async');
+  } else {
+    mainFileContent = mainFileContent.replaceAll('{{async}}', '');
+  }
+
+  if (config.initializeSizeUtils) {
+    mainImports += 'import \'utils/size_utils.dart\';\n';
+    mainFileContent = mainFileContent.replaceAll('{{sizeUtils}}', '''
+    final SizeUtils sizeUtils = SizeUtils();
+    sizeUtils.init(context);
+    ''');
+    final sizeUtilsFile = File('${projectDir.path}/lib/utils/size_utils.dart');
+    await sizeUtilsFile.create(recursive: true);
+    await sizeUtilsFile.writeAsString(Templates.sizeUtilsContent);
+    logDebug('Successfully generated and updated ${sizeUtilsFile.path}');
+  } else {
+    mainFileContent = mainFileContent.replaceAll('{{sizeUtils}}', '');
+  }
+
+  if (config.initializeDotEnv) {
+    mainImports += 'import \'package:flutter_dotenv/flutter_dotenv.dart\';\n';
+    mainFileContent = mainFileContent.replaceAll('{{dotEnv}}', '''
+    await dotenv.load(fileName: '.env');
+    ''');
+    final dotEnvFile = File('${projectDir.path}/.env');
+    await dotEnvFile.create(recursive: true);
+    await dotEnvFile.writeAsString(Templates.dotEnvContent);
+
+    logDebug('Successfully generated and updated ${dotEnvFile.path}');
+  } else {
+    mainFileContent = mainFileContent.replaceAll('{{dotEnv}}', '');
+  }
+
+  if (config.createLocalStorageService) {
+    mainImports += 'import \'services/local_storage_service.dart\';\n';
+    mainFileContent = mainFileContent.replaceAll('{{localStorage}}', '''
+    await LocalStorageService.init();
+    ''');
+    final localStorageFile = File(
+      '${projectDir.path}/lib/services/local_storage_service.dart',
+    );
+    await localStorageFile.create(recursive: true);
+    await localStorageFile.writeAsString(Templates.localStorageServiceContent);
+
+    logDebug('Successfully generated and updated ${localStorageFile.path}');
+  } else {
+    mainFileContent = mainFileContent.replaceAll('{{localStorage}}', '');
+  }
+
+  if (!config.useFlexColorScheme &&
       config.routing == RoutingOption.none &&
       config.stateManagement == StateManagementOption.none) {
-    mainFileContent = mainFileContent.replaceAll(
-      '{{imports}}',
-      'import \'home_page.dart\';',
-    );
-    mainFileContent = mainFileContent.replaceAll('{{localStorage}}', '');
-    mainFileContent = mainFileContent.replaceAll('{{dotEnv}}', '');
-    mainFileContent = mainFileContent.replaceAll('{{sizeUtils}}', '');
     mainFileContent = mainFileContent.replaceAll(
       '{{materialAppWrapper}}',
       Templates.materialAppContent,
@@ -142,23 +198,13 @@ Future<void> generateProjectFiles(Config config) async {
     mainFileContent = mainFileContent.replaceAll('{{router}}', '');
   }
 
+  mainFileContent = mainFileContent.replaceAll('{{imports}}', mainImports);
+
   await mainFile.writeAsString(mainFileContent);
 
+  final homePageFile = File('${projectDir.path}/lib/home_page.dart');
   logDebug('Successfully generated and updated ${mainFile.path}');
   await homePageFile.writeAsString(Templates.homePageContent);
-
-  final result = await Process.run(
-    'dart',
-    ['format', '.'],
-    runInShell: true,
-    workingDirectory: projectDir.path,
-  );
-
-  if (result.exitCode == 0) {
-    logInfo("[ Formatting Project ]\n${result.stdout}");
-  } else {
-    logError("[ Formatting Project Failed ]\n${result.stderr}");
-  }
 
   logDebug('Successfully generated and updated ${homePageFile.path}');
 }
