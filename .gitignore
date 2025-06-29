@@ -5,3 +5,5 @@
 my_project/
 
 templates/
+
+*.py

@@ -1,5 +1,6 @@
 import 'package:prompts/prompts.dart' as prompts;
 import 'config.dart';
+import 'logger.dart';
 
 Future<Config> promptUserPreferences() async {
   final name = prompts.get(
@@ -29,15 +30,24 @@ Future<Config> promptUserPreferences() async {
     (e) => e.name == stateChoice,
   );
 
-  final routingNames = RoutingOption.values.map((e) => e.name).toList();
-  final routingChoice = prompts.choose<String>(
-    'Choose routing:',
-    routingNames,
-    defaultsTo: RoutingOption.none.name,
-  );
-  final routing = RoutingOption.values.firstWhere(
-    (e) => e.name == routingChoice,
-  );
+  String routingChoice = "";
+  RoutingOption routing = RoutingOption.none;
+
+  if (state != StateManagementOption.getx) {
+    final routingNames = RoutingOption.values.map((e) => e.name).toList();
+    routingChoice =
+        prompts.choose<String>(
+          'Choose routing:',
+          routingNames,
+          defaultsTo: RoutingOption.none.name,
+        ) ??
+        "none";
+    routing = RoutingOption.values.firstWhere((e) => e.name == routingChoice);
+  } else {
+    logInfo(
+      'Note: GetX does not support multiple pages out of the box. You will need to manage routing manually.',
+    );
+  }
 
   final useFlexColorScheme = prompts.getBool(
     'Use flex_color_scheme for theming?',

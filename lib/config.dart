@@ -1,6 +1,6 @@
 enum StateManagementOption { none, provider, riverpod, bloc, getx }
 
-enum RoutingOption { none, goRouter, autoRoute }
+enum RoutingOption { none, goRouter}
 
 class Config {
   final String projectName;
