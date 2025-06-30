@@ -264,23 +264,20 @@ abstract final class AppTheme {
   abstract final class AppColors {
     // Add your colors here
     // Example :
-
-    static const primary = Color(0xFF000000);
-    static const secondary = Color(0xFF000000);
-    static const tertiary = Color(0xFF000000);
+    static const primaryBlack = Color(0xFF000000);
   }
   ''';
 
   static String assetsContent = '''
-class Assets {
-  static final String basePath = "assets/images/";
+    class Assets {
+      static final String basePath = "assets/images/";
 
-  // Add your assets here
-  // Example :
+      // Add your assets here
+      // Example :
 
-  // static final String logo = '\${basePath}logo.png';
-}
-    ''';
+      // static final String logo = '\${basePath}logo.png';
+    }
+  ''';
 }
 
 class StateManagementTemplates {
@@ -406,16 +403,16 @@ class StateManagementTemplates {
     ''';
 
   static String cubitTemplate = '''
-import 'package:flutter_bloc/flutter_bloc.dart';
+    import 'package:flutter_bloc/flutter_bloc.dart';
 
-class CounterCubit extends Cubit<int> {
-  CounterCubit() : super(0);
+    class CounterCubit extends Cubit<int> {
+      CounterCubit() : super(0);
 
-  void increment() {
-    emit(state + 1);
-  }
-}
-''';
+      void increment() {
+        emit(state + 1);
+      }
+    }
+  ''';
 
   static String getxHomePageContent = '''
     import 'package:flutter/material.dart';
@@ -461,5 +458,5 @@ class CounterCubit extends Cubit<int> {
         count.value++;
       }
     }
-    ''';
+  ''';
 }

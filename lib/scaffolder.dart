@@ -217,7 +217,7 @@ Future<void> generateProjectFiles(Config config) async {
     mainFileContent = mainFileContent.replaceAll('{{materialAppWrapper}}', '''
     MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => CounterBloc()),
+        BlocProvider(create: (_) => CounterCubit()),
         // Add more blocs here
       ],
       child: ${Templates.materialAppContent.replaceAll(";", ",")}
@@ -299,7 +299,7 @@ Future<void> generateProjectFiles(Config config) async {
     } else {
       mainFileContent = mainFileContent.replaceAll(
         '{{materialApp}}',
-        'MaterialApp.router',
+        'MaterialApp',
       );
     }
     mainFileContent = mainFileContent.replaceAll('{{router}}', '');
@@ -313,9 +313,9 @@ Future<void> generateProjectFiles(Config config) async {
   if (config.useFlexColorScheme) {
     mainImports += 'import \'constants/theme.dart\';\n';
     mainFileContent = mainFileContent.replaceAll('{{theme}}', '''
-              theme: AppTheme.light,
-              darkTheme: AppTheme.dark,
-              ''');
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+    ''');
 
     final appThemeFile = File('${projectDir.path}/lib/constants/theme.dart');
     await appThemeFile.create(recursive: true);
