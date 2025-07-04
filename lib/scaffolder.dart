@@ -264,10 +264,7 @@ Future<Map<String, String>> _handleUtilityFiles(
     mainFileContent = mainFileContent.replaceAll('{{localStorage}}', '');
   }
 
-  return {
-    'mainFileContent': mainFileContent,
-    'mainImports': mainImports,
-  };
+  return {'mainFileContent': mainFileContent, 'mainImports': mainImports};
 }
 
 /// Handles state management related file generation and main file content updates
@@ -431,10 +428,7 @@ Future<Map<String, String>> _handleRoutingFiles(
       ' home: HomePage(),',
     );
   }
-  return {
-    'mainFileContent': mainFileContent,
-    'mainImports': mainImports,
-  };
+  return {'mainFileContent': mainFileContent, 'mainImports': mainImports};
 }
 
 /// Handles theme related file generation and main file content updates
@@ -462,10 +456,7 @@ Future<Map<String, String>> _handleThemeFiles(
   } else {
     mainFileContent = mainFileContent.replaceAll('{{theme}}', '');
   }
-  return {
-    'mainFileContent': mainFileContent,
-    'mainImports': mainImports,
-  };
+  return {'mainFileContent': mainFileContent, 'mainImports': mainImports};
 }
 
 /// Creates constant files like `colors.dart` and `assets.dart` within the

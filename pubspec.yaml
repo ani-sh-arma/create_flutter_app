@@ -1,6 +1,6 @@
 name: create_flutter_app
 description: A CLI to scaffold Flutter projects with customizable setup.
-version: 0.0.1
+version: 1.0.0
 homepage: https://github.com/ani-sh-arma/create_flutter_app
 repository: https://github.com/ani-sh-arma/create_flutter_app
 
