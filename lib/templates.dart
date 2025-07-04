@@ -1,4 +1,9 @@
+/// A collection of static string templates used for generating Flutter project files.
+///
+/// These templates are used by the [Scaffolder] to create the initial
+/// structure and content of a new Flutter application based on user choices.
 class Templates {
+  /// Template for the main `lib/main.dart` file.
   static String mainTemplate = '''
     import 'package:flutter/material.dart';
     {{imports}}
@@ -21,6 +26,7 @@ class Templates {
     }
     ''';
 
+  /// Template for the `MaterialApp` widget content.
   static String materialAppContent = '''
   {{materialApp}}(
     title: 'Create Flutter App',
@@ -30,6 +36,7 @@ class Templates {
   );
   ''';
 
+  /// Template for the default `lib/home_page.dart` file.
   static String homePageContent = '''
     import 'package:flutter/material.dart';
     class HomePage extends StatefulWidget {
@@ -78,6 +85,7 @@ class Templates {
 
     ''';
 
+  /// Template for the `lib/utils/size_utils.dart` file.
   static String sizeUtilsContent = '''
     import 'package:flutter/material.dart';
 
@@ -99,6 +107,7 @@ class Templates {
     }
     ''';
 
+  /// Template for the `lib/services/local_storage_service.dart` file.
   static String localStorageServiceContent = '''
     import 'package:shared_preferences/shared_preferences.dart';
 
@@ -157,6 +166,7 @@ class Templates {
     }
     ''';
 
+  /// Template for the `.env` file content.
   static String dotEnvContent = '''
     .env files are for storing environment variables.
     Please make sure to add anytype of sensitive information in this file.
@@ -166,6 +176,7 @@ class Templates {
     API_SECRET=your_api_secret
     ''';
 
+  /// Template for the `lib/router/router.dart` file when using GoRouter.
   static String goRouterContent = '''
     import 'package:flutter/material.dart';
     import 'package:go_router/go_router.dart';
@@ -189,6 +200,7 @@ class Templates {
     );
     ''';
 
+  /// Template for the `lib/router/routes.dart` file.
   static String routeNames = '''
       class Routes {
         static const home = '/';
@@ -196,6 +208,7 @@ class Templates {
       }
     ''';
 
+  /// Template for the `lib/constants/theme.dart` file when using FlexColorScheme.
   static String appThemeContent = '''
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/cupertino.dart';
@@ -258,6 +271,7 @@ abstract final class AppTheme {
 }
 ''';
 
+  /// Template for the `lib/constants/colors.dart` file.
   static String colorsContent = '''
   import 'package:flutter/material.dart';
 
@@ -268,6 +282,7 @@ abstract final class AppTheme {
   }
   ''';
 
+  /// Template for the `lib/constants/assets.dart` file.
   static String assetsContent = '''
     class Assets {
       static final String basePath = "assets/images/";
@@ -280,7 +295,10 @@ abstract final class AppTheme {
   ''';
 }
 
+/// A collection of static string templates specifically for state management
+/// related files, used by the [Scaffolder] to generate boilerplate code.
 class StateManagementTemplates {
+  /// Template for the `home_page.dart` file when using Provider state management.
   static String proviiderHomePageContent = '''
     import 'package:provider/provider.dart';
     import 'package:flutter/material.dart';
@@ -317,6 +335,7 @@ class StateManagementTemplates {
     }
     ''';
 
+  /// Template for the `lib/providers/counter_provider.dart` file when using Provider.
   static String counterProviderContent = '''
     import 'package:flutter/material.dart';
 
@@ -332,6 +351,7 @@ class StateManagementTemplates {
     }
     ''';
 
+  /// Template for the `home_page.dart` file when using Riverpod state management.
   static String riverpodHomePageContent = '''
     import 'package:flutter/material.dart';
     import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -366,6 +386,7 @@ class StateManagementTemplates {
       }
     ''';
 
+  /// Template for the `home_page.dart` file when using BLoC state management.
   static String blocHomePageContent = '''
     import 'package:flutter/material.dart';
     import 'package:flutter_bloc/flutter_bloc.dart';
@@ -402,6 +423,7 @@ class StateManagementTemplates {
     }
     ''';
 
+  /// Template for the `lib/cubits/counter_cubit.dart` file when using BLoC.
   static String cubitTemplate = '''
     import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -414,6 +436,7 @@ class StateManagementTemplates {
     }
   ''';
 
+  /// Template for the `home_page.dart` file when using GetX state management.
   static String getxHomePageContent = '''
     import 'package:flutter/material.dart';
     import 'package:get/get.dart';
@@ -448,6 +471,7 @@ class StateManagementTemplates {
     }
     ''';
 
+  /// Template for the `lib/controllers/counter_controller.dart` file when using GetX.
   static String getxControllerContent = '''
     import 'package:get/get.dart';
 

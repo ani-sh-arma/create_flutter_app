@@ -5,13 +5,20 @@ import 'package:create_flutter_app/config.dart';
 import 'package:create_flutter_app/logger.dart';
 import 'package:create_flutter_app/templates.dart';
 
+/// Scaffolds a new Flutter project based on the provided [config].
+///
+/// This function orchestrates the entire project creation process:
+/// 1. Creates the base Flutter project.
+/// 2. Adds necessary dependencies based on user choices.
+/// 3. Generates and modifies project files.
+/// 4. Formats the newly generated project.
 Future<void> scaffoldProject(Config config) async {
   logInfo("Creating project...");
-  await createProject(config);
+  await _createProject(config);
   logInfo("Adding dependencies...");
-  await addDependencies(config);
+  await _addDependencies(config);
   logInfo("Generating project files...");
-  await generateProjectFiles(config);
+  await _generateProjectFiles(config);
 
   logInfo("Formatting project...");
   final projectDir = Directory(config.projectName);
@@ -24,14 +31,18 @@ Future<void> scaffoldProject(Config config) async {
   );
 
   if (result.exitCode == 0) {
-    logInfo("[ Formatting Project ]\n${result.stdout}");
+    logInfo("[ Formatted Project ]\n${result.stdout}");
   } else {
     logError("[ Formatting Project Failed ]\n${result.stderr}");
   }
   logSuccess("Project created successfully!");
 }
 
-Future<void> createProject(Config config) async {
+/// Creates a new Flutter project with the given [config.projectName].
+///
+/// Throws an [Exit] exception if a project with the same name already exists
+/// or if the Flutter SDK is not found.
+Future<void> _createProject(Config config) async {
   final projectDir = Directory(config.projectName);
 
   if (await projectDir.exists()) {
@@ -60,7 +71,9 @@ Future<void> createProject(Config config) async {
   }
 }
 
-Future<void> addDependencies(Config config) async {
+/// Adds necessary Dart/Flutter dependencies to the newly created project
+/// based on the user's [config].
+Future<void> _addDependencies(Config config) async {
   List<String> dependencies = [];
 
   switch (config.stateManagement) {
@@ -119,20 +132,94 @@ Future<void> addDependencies(Config config) async {
   }
 }
 
-Future<void> generateProjectFiles(Config config) async {
+/// Generates and modifies various project files based on the user's [config].
+///
+/// This includes handling utility files, state management setup, routing,
+/// theming, and creating constant files.
+Future<void> _generateProjectFiles(Config config) async {
   final projectDir = Directory(config.projectName);
-  final mainFile = File('${projectDir.path}/lib/main.dart');
   String mainImports = '';
   String homePageContent = Templates.homePageContent;
-
   String mainFileContent = Templates.mainTemplate;
 
-  if (config.initializeDotEnv || config.createLocalStorageService) {
-    mainFileContent = mainFileContent.replaceAll('{{async}}', 'async');
-  } else {
-    mainFileContent = mainFileContent.replaceAll('{{async}}', '');
-  }
+  mainFileContent = _replaceAsyncPlaceholder(mainFileContent, config);
 
+  // Handle utility files
+  final utilityFilesResult = await _handleUtilityFiles(
+    config,
+    projectDir,
+    mainFileContent,
+    mainImports,
+  );
+  mainFileContent = utilityFilesResult['mainFileContent']!;
+  mainImports = utilityFilesResult['mainImports']!;
+
+  // Handle state management files
+  final stateManagementResult = await _handleStateManagementFiles(
+    config,
+    projectDir,
+    mainFileContent,
+    homePageContent,
+    mainImports,
+  );
+  mainFileContent = stateManagementResult['mainFileContent']!;
+  homePageContent = stateManagementResult['homePageContent']!;
+  mainImports = stateManagementResult['mainImports']!;
+
+  // Handle routing files
+  final routingResult = await _handleRoutingFiles(
+    config,
+    projectDir,
+    mainFileContent,
+    mainImports,
+  );
+  mainFileContent = routingResult['mainFileContent']!;
+  mainImports = routingResult['mainImports']!;
+
+  // Handle theme files
+  final themeResult = await _handleThemeFiles(
+    config,
+    projectDir,
+    mainFileContent,
+    mainImports,
+  );
+  mainFileContent = themeResult['mainFileContent']!;
+  mainImports = themeResult['mainImports']!;
+
+  // Create constant files
+  await _createConstantFiles(projectDir);
+
+  // Write final project files
+  await _writeFinalProjectFiles(
+    projectDir,
+    mainFileContent,
+    homePageContent,
+    mainImports,
+  );
+}
+
+/// Replaces the `{{async}}` placeholder in the main file content based on config.
+///
+/// If `initializeDotEnv` or `createLocalStorageService` is true,
+/// the placeholder is replaced with 'async', otherwise with an empty string.
+String _replaceAsyncPlaceholder(String mainFileContent, Config config) {
+  if (config.initializeDotEnv || config.createLocalStorageService) {
+    return mainFileContent.replaceAll('{{async}}', 'async');
+  } else {
+    return mainFileContent.replaceAll('{{async}}', '');
+  }
+}
+
+/// Handles the generation and updates for utility files like `size_utils.dart`,
+/// `.env`, and `local_storage_service.dart` based on the [config].
+///
+/// Returns a map containing the updated `mainFileContent` and `mainImports`.
+Future<Map<String, String>> _handleUtilityFiles(
+  Config config,
+  Directory projectDir,
+  String mainFileContent,
+  String mainImports,
+) async {
   if (config.initializeSizeUtils) {
     mainImports += 'import \'utils/size_utils.dart\';\n';
     mainFileContent = mainFileContent.replaceAll('{{sizeUtils}}', '''
@@ -177,6 +264,24 @@ Future<void> generateProjectFiles(Config config) async {
     mainFileContent = mainFileContent.replaceAll('{{localStorage}}', '');
   }
 
+  return {
+    'mainFileContent': mainFileContent,
+    'mainImports': mainImports,
+  };
+}
+
+/// Handles state management related file generation and main file content updates
+/// based on the [config].
+///
+/// Returns a map containing the updated `mainFileContent`, `homePageContent`,
+/// and `mainImports`.
+Future<Map<String, String>> _handleStateManagementFiles(
+  Config config,
+  Directory projectDir,
+  String mainFileContent,
+  String homePageContent,
+  String mainImports,
+) async {
   if (config.stateManagement == StateManagementOption.provider) {
     mainImports += 'import \'package:provider/provider.dart\';\n';
     mainImports += 'import \'providers/counter_provider.dart\';\n';
@@ -259,6 +364,23 @@ Future<void> generateProjectFiles(Config config) async {
     );
   }
 
+  return {
+    'mainFileContent': mainFileContent,
+    'homePageContent': homePageContent,
+    'mainImports': mainImports,
+  };
+}
+
+/// Handles routing related file generation and main file content updates
+/// based on the [config].
+///
+/// Returns a map containing the updated `mainFileContent` and `mainImports`.
+Future<Map<String, String>> _handleRoutingFiles(
+  Config config,
+  Directory projectDir,
+  String mainFileContent,
+  String mainImports,
+) async {
   if (config.routing == RoutingOption.goRouter) {
     mainImports += 'import \'router/router.dart\';\n';
 
@@ -309,7 +431,22 @@ Future<void> generateProjectFiles(Config config) async {
       ' home: HomePage(),',
     );
   }
+  return {
+    'mainFileContent': mainFileContent,
+    'mainImports': mainImports,
+  };
+}
 
+/// Handles theme related file generation and main file content updates
+/// based on the [config].
+///
+/// Returns a map containing the updated `mainFileContent` and `mainImports`.
+Future<Map<String, String>> _handleThemeFiles(
+  Config config,
+  Directory projectDir,
+  String mainFileContent,
+  String mainImports,
+) async {
   if (config.useFlexColorScheme) {
     mainImports += 'import \'constants/theme.dart\';\n';
     mainFileContent = mainFileContent.replaceAll('{{theme}}', '''
@@ -325,26 +462,39 @@ Future<void> generateProjectFiles(Config config) async {
   } else {
     mainFileContent = mainFileContent.replaceAll('{{theme}}', '');
   }
+  return {
+    'mainFileContent': mainFileContent,
+    'mainImports': mainImports,
+  };
+}
 
+/// Creates constant files like `colors.dart` and `assets.dart` within the
+/// project's `lib/constants` directory.
+Future<void> _createConstantFiles(Directory projectDir) async {
   final colorsFile = File('${projectDir.path}/lib/constants/colors.dart');
   await colorsFile.create(recursive: true);
   await colorsFile.writeAsString(Templates.colorsContent);
-
   logDebug('Successfully generated and updated ${colorsFile.path}');
 
   final assetsFile = File('${projectDir.path}/lib/constants/assets.dart');
   await assetsFile.create(recursive: true);
   await assetsFile.writeAsString(Templates.assetsContent);
-
   logDebug('Successfully generated and updated ${assetsFile.path}');
+}
 
+/// Writes the final `main.dart` and `home_page.dart` files to the project directory.
+Future<void> _writeFinalProjectFiles(
+  Directory projectDir,
+  String mainFileContent,
+  String homePageContent,
+  String mainImports,
+) async {
+  final mainFile = File('${projectDir.path}/lib/main.dart');
   mainFileContent = mainFileContent.replaceAll('{{imports}}', mainImports);
-
   await mainFile.writeAsString(mainFileContent);
+  logDebug('Successfully generated and updated ${mainFile.path}');
 
   final homePageFile = File('${projectDir.path}/lib/home_page.dart');
-  logDebug('Successfully generated and updated ${mainFile.path}');
   await homePageFile.writeAsString(homePageContent);
-
   logDebug('Successfully generated and updated ${homePageFile.path}');
 }

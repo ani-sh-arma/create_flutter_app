@@ -2,6 +2,19 @@ import 'package:prompts/prompts.dart' as prompts;
 import 'config.dart';
 import 'logger.dart';
 
+/// Prompts the user for various Flutter project configuration preferences
+/// through interactive command-line questions.
+///
+/// This function guides the user through selecting:
+/// - Project name
+/// - State management solution (Provider, Riverpod, BLoC, GetX, or none)
+/// - Routing solution (GoRouter, AutoRoute, Navigator 2.0, or none)
+/// - Whether to use `flex_color_scheme` for theming
+/// - Whether to create a `LocalStorageService` using `shared_preferences`
+/// - Whether to initialize `SizeUtils` for responsive design
+/// - Whether to initialize `flutter_dotenv` for environment variables
+///
+/// Returns a [Config] object containing the user's selected preferences.
 Future<Config> promptUserPreferences() async {
   final name = prompts.get(
     'Project Name',
