@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the promptUserPreferences function from the cli library, for the Dart programming language.">
+  <title>promptUserPreferences function - cli library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">create_flutter_app</a></li>
+    <li><a href="../cli">cli.dart</a></li>
+    <li class="self-crumb">promptUserPreferences function</li>
+  </ol>
+  <div class="self-name">promptUserPreferences</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="cli&#47;cli-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">promptUserPreferences</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.dart.dev/stable/3.7.2/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../config/Config-class.html">Config</a></span>&gt;</span></span>
+<span class="name ">promptUserPreferences</span>(<wbr>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Prompts the user for various Flutter project configuration preferences
+through interactive command-line questions.</p>
+<p>This function guides the user through selecting:</p>
+<ul>
+<li>Project name</li>
+<li>State management solution (Provider, Riverpod, BLoC, GetX, or none)</li>
+<li>Routing solution (GoRouter, AutoRoute, Navigator 2.0, or none)</li>
+<li>Whether to use <code>flex_color_scheme</code> for theming</li>
+<li>Whether to create a <code>LocalStorageService</code> using <code>shared_preferences</code></li>
+<li>Whether to initialize <code>SizeUtils</code> for responsive design</li>
+<li>Whether to initialize <code>flutter_dotenv</code> for environment variables</li>
+</ul>
+<p>Returns a <a href="../config/Config-class.html">Config</a> object containing the user's selected preferences.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;Config&gt; promptUserPreferences() async {
+  final name = prompts.get(
+    &#39;Project Name&#39;,
+    defaultsTo: &#39;my_project&#39;,
+    validate: (p0) {
+      if (p0.isEmpty) {
+        return false;
+      }
+      if (p0.contains(&#39; &#39;)) {
+        return false;
+      }
+      if (p0.contains(&#39;-&#39;)) {
+        return false;
+      }
+      return true;
+    },
+  );
+
+  final stateNames = StateManagementOption.values.map((e) =&gt; e.name).toList();
+  final stateChoice = prompts.choose&lt;String&gt;(
+    &#39;Choose state management:&#39;,
+    stateNames,
+    defaultsTo: StateManagementOption.none.name,
+  );
+  final state = StateManagementOption.values.firstWhere(
+    (e) =&gt; e.name == stateChoice,
+  );
+
+  String routingChoice = &quot;&quot;;
+  RoutingOption routing = RoutingOption.none;
+
+  if (state != StateManagementOption.getx) {
+    final routingNames = RoutingOption.values.map((e) =&gt; e.name).toList();
+    routingChoice =
+        prompts.choose&lt;String&gt;(
+          &#39;Choose routing:&#39;,
+          routingNames,
+          defaultsTo: RoutingOption.none.name,
+        ) ??
+        &quot;none&quot;;
+    routing = RoutingOption.values.firstWhere((e) =&gt; e.name == routingChoice);
+  } else {
+    logInfo(
+      &#39;Note: GetX does not support multiple pages out of the box. You will need to manage routing manually.&#39;,
+    );
+  }
+
+  final useFlexColorScheme = prompts.getBool(
+    &#39;Use flex_color_scheme for theming?&#39;,
+    defaultsTo: false,
+  );
+  final createLocalStorageService = prompts.getBool(
+    &#39;Create a LocalStorageService using shared prefs?&#39;,
+    defaultsTo: false,
+  );
+  final initializeSizeUtils = prompts.getBool(
+    &#39;Initialize SizeUtils for responsive design?&#39;,
+    defaultsTo: false,
+  );
+  final initializeDotEnv = prompts.getBool(
+    &#39;Initialize DotEnv for environment variables?&#39;,
+    defaultsTo: false,
+  );
+
+  return Config(
+    projectName: name,
+    stateManagement: state,
+    routing: routing,
+    useFlexColorScheme: useFlexColorScheme,
+    createLocalStorageService: createLocalStorageService,
+    initializeSizeUtils: initializeSizeUtils,
+    initializeDotEnv: initializeDotEnv,
+  );
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">create_flutter_app</a></li>
+    <li><a href="../cli">cli</a></li>
+    <li class="self-crumb">promptUserPreferences function</li>
+</ol>
+
+    <h5>cli library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    create_flutter_app
+      0.0.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

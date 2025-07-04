@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="create_flutter_app API docs, for the Dart programming language.">
+  <title>create_flutter_app - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/ani-sh-arma/create_flutter_app">create_flutter_app package</a></li>
+  </ol>
+  <div class="self-name">create_flutter_app</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="create_flutter_app">create_flutter_app</h1>
+<p>A simple CLI tool to scaffold Flutter projects with custom setups. Inspired by <code>create-t3-app</code>, but built for Flutter!</p>
+<hr>
+<h2 id="-features">🚀 Features</h2>
+<ul>
+<li>Interactive prompts to configure your Flutter project</li>
+<li>Add state management, routing, and project structure</li>
+<li>One-liner setup from anywhere</li>
+</ul>
+<hr>
+<h2 id="-getting-started">🧪 Getting Started</h2>
+<h3 id="check-it-out-on-pubdev">Check it out on pub.dev</h3>
+<p>You can find the <code>create_flutter_app</code> package on <a href="https://pub.dev/packages/create_flutter_app">pub.dev</a>.</p>
+<h3 id="install-globally">Install globally</h3>
+<p>To use the CLI tool, you need to activate it globally using Dart's package manager:</p>
+<pre class="language-sh"><code class="language-sh">dart pub global activate create_flutter_app
+</code></pre>
+<h3 id="usage">Usage</h3>
+<p>Once installed, you can run the tool from any directory:</p>
+<pre class="language-sh"><code class="language-sh">create_flutter_app
+</code></pre>
+<p>This will start an interactive prompt that guides you through the project setup.</p>
+<h4 id="interactive-prompts">Interactive Prompts:</h4>
+<p>The <code>create_flutter_app</code> tool provides the following configuration options:</p>
+<ul>
+<li><strong>Project Name:</strong> The name of your new Flutter project. This will also be used as the directory name.</li>
+<li><strong>State Management:</strong> Choose your preferred state management solution:
+<ul>
+<li><code>none</code>: No specific state management boilerplate.</li>
+<li><code>provider</code>: Integrates the <code>provider</code> package for simple state management.</li>
+<li><code>riverpod</code>: Sets up <code>flutter_riverpod</code> for a more robust and testable approach.</li>
+<li><code>bloc</code>: Configures the project with the <code>bloc</code> package for reactive state management.</li>
+</ul>
+</li>
+<li><strong>Routing:</strong> Select a routing solution for navigation:
+<ul>
+<li><code>none</code>: Basic Flutter Navigator 1.0.</li>
+<li><code>navigator2</code>: Sets up Navigator 2.0 with a basic router delegate.</li>
+<li><code>goRouter</code>: Integrates the <code>go_router</code> package for declarative routing.</li>
+<li><code>autoRoute</code>: Configures <code>auto_route</code> for code-generated routing.</li>
+</ul>
+</li>
+<li><strong>Use <code>flex_color_scheme</code> for theming:</strong> (yes/no)
+<ul>
+<li>If <code>yes</code>, the project will include <code>flex_color_scheme</code> for advanced theming capabilities.</li>
+</ul>
+</li>
+<li><strong>Create a <code>LocalStorageService</code> using <code>shared_prefs</code>:</strong> (yes/no)
+<ul>
+<li>If <code>yes</code>, a utility service for local data persistence using <code>shared_preferences</code> will be generated.</li>
+</ul>
+</li>
+<li><strong>Initialize <code>SizeUtils</code> for responsive design:</strong> (yes/no)
+<ul>
+<li>If <code>yes</code>, a helper class for responsive UI adjustments based on screen size will be included.</li>
+</ul>
+</li>
+<li><strong>Include Common Custom Widgets:</strong> (yes/no)
+<ul>
+<li>If <code>yes</code>, a set of commonly used custom widgets (e.g., custom buttons, text fields) will be added to the project.</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><strong>Example Usage (GIF/Screenshot Placeholder):</strong>
+<em>(Insert a GIF or screenshot demonstrating the interactive prompts and a successful project creation here.)</em></p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="cli">
+  <span class="name"><a href="cli">cli</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="config">
+  <span class="name"><a href="config">config</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="logger">
+  <span class="name"><a href="logger">logger</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="scaffolder">
+  <span class="name"><a href="scaffolder">scaffolder</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+          <dt id="templates">
+  <span class="name"><a href="templates">templates</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/ani-sh-arma/create_flutter_app">create_flutter_app package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">create_flutter_app</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="cli">cli</a></li>
+      <li><a href="config">config</a></li>
+      <li><a href="logger">logger</a></li>
+      <li><a href="scaffolder">scaffolder</a></li>
+      <li><a href="templates">templates</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    create_flutter_app
+      0.0.1
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+
