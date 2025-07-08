@@ -21,12 +21,17 @@ Future<Config> promptUserPreferences() async {
     defaultsTo: 'my_project',
     validate: (p0) {
       if (p0.isEmpty) {
+        logError("Project name cannot be empty");
         return false;
       }
       if (p0.contains(' ')) {
+        logError("Project name cannot contain spaces");
         return false;
       }
       if (p0.contains('-')) {
+        logError(
+          "Project name cannot contain dashes, try using underscores instead",
+        );
         return false;
       }
       return true;
@@ -34,33 +39,36 @@ Future<Config> promptUserPreferences() async {
   );
 
   final stateNames = StateManagementOption.values.map((e) => e.name).toList();
-  final stateChoice = prompts.choose<String>(
-    'Choose state management:',
-    stateNames,
-    defaultsTo: StateManagementOption.none.name,
-  );
-  final state = StateManagementOption.values.firstWhere(
-    (e) => e.name == stateChoice,
-  );
+  StateManagementOption state;
+  while (true) {
+    final stateChoice = prompts.choose<String>(
+      'Choose state management:',
+      stateNames,
+      defaultsTo: StateManagementOption.none.name,
+    );
+    state = StateManagementOption.values.firstWhere(
+      (e) => e.name == stateChoice,
+    );
+
+    if (state == StateManagementOption.getx) {
+      logError("❌ Wrong choice, Try using a better state management solution.");
+    } else {
+      break;
+    }
+  }
 
   String routingChoice = "";
   RoutingOption routing = RoutingOption.none;
 
-  if (state != StateManagementOption.getx) {
-    final routingNames = RoutingOption.values.map((e) => e.name).toList();
-    routingChoice =
-        prompts.choose<String>(
-          'Choose routing:',
-          routingNames,
-          defaultsTo: RoutingOption.none.name,
-        ) ??
-        "none";
-    routing = RoutingOption.values.firstWhere((e) => e.name == routingChoice);
-  } else {
-    logInfo(
-      'Note: GetX does not support multiple pages out of the box. You will need to manage routing manually.',
-    );
-  }
+  final routingNames = RoutingOption.values.map((e) => e.name).toList();
+  routingChoice =
+      prompts.choose<String>(
+        'Choose routing:',
+        routingNames,
+        defaultsTo: RoutingOption.none.name,
+      ) ??
+      "none";
+  routing = RoutingOption.values.firstWhere((e) => e.name == routingChoice);
 
   final useFlexColorScheme = prompts.getBool(
     'Use flex_color_scheme for theming?',

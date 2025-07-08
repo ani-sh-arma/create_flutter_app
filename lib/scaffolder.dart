@@ -89,7 +89,6 @@ Future<void> _addDependencies(Config config) async {
       dependencies.add('flutter_bloc');
       break;
     case StateManagementOption.getx:
-      dependencies.add('get');
       break;
   }
 
@@ -116,7 +115,6 @@ Future<void> _addDependencies(Config config) async {
   if (dependencies.isNotEmpty) {
     logInfo("Adding dependencies: $dependencies");
     final projectDir = Directory(config.projectName);
-    logDebug("[Project Dir] ${projectDir.absolute}");
     final result = await Process.run(
       'flutter',
       ['pub', 'add', ...dependencies],
@@ -229,7 +227,7 @@ Future<Map<String, String>> _handleUtilityFiles(
     final sizeUtilsFile = File('${projectDir.path}/lib/utils/size_utils.dart');
     await sizeUtilsFile.create(recursive: true);
     await sizeUtilsFile.writeAsString(Templates.sizeUtilsContent);
-    logDebug('Successfully generated and updated ${sizeUtilsFile.path}');
+    logInfo('Successfully generated and updated ${sizeUtilsFile.path}');
   } else {
     mainFileContent = mainFileContent.replaceAll('{{sizeUtils}}', '');
   }
@@ -243,7 +241,7 @@ Future<Map<String, String>> _handleUtilityFiles(
     await dotEnvFile.create(recursive: true);
     await dotEnvFile.writeAsString(Templates.dotEnvContent);
 
-    logDebug('Successfully generated and updated ${dotEnvFile.path}');
+    logInfo('Successfully generated and updated ${dotEnvFile.path}');
   } else {
     mainFileContent = mainFileContent.replaceAll('{{dotEnv}}', '');
   }
@@ -259,7 +257,7 @@ Future<Map<String, String>> _handleUtilityFiles(
     await localStorageFile.create(recursive: true);
     await localStorageFile.writeAsString(Templates.localStorageServiceContent);
 
-    logDebug('Successfully generated and updated ${localStorageFile.path}');
+    logInfo('Successfully generated and updated ${localStorageFile.path}');
   } else {
     mainFileContent = mainFileContent.replaceAll('{{localStorage}}', '');
   }
@@ -301,7 +299,7 @@ Future<Map<String, String>> _handleStateManagementFiles(
 
     homePageContent = StateManagementTemplates.proviiderHomePageContent;
 
-    logDebug('Successfully generated and updated ${counterProviderFile.path}');
+    logInfo('Successfully generated and updated ${counterProviderFile.path}');
   } else if (config.stateManagement == StateManagementOption.riverpod) {
     mainImports +=
         'import \'package:flutter_riverpod/flutter_riverpod.dart\';\n';
@@ -312,7 +310,7 @@ Future<Map<String, String>> _handleStateManagementFiles(
     ''');
     homePageContent = StateManagementTemplates.riverpodHomePageContent;
 
-    logDebug('Successfully generated and updated files for Riverpod');
+    logInfo('Successfully generated and updated files for Riverpod');
   } else if (config.stateManagement == StateManagementOption.bloc) {
     mainImports += 'import \'package:flutter_bloc/flutter_bloc.dart\';\n';
     mainImports += 'import \'cubits/counter_cubit.dart\';\n';
@@ -335,25 +333,7 @@ Future<Map<String, String>> _handleStateManagementFiles(
 
     homePageContent = StateManagementTemplates.blocHomePageContent;
 
-    logDebug('Successfully generated and updated files for BLoC');
-  } else if (config.stateManagement == StateManagementOption.getx) {
-    mainImports += 'import \'package:get/get.dart\';\n';
-    mainFileContent = mainFileContent.replaceAll(
-      '{{materialAppWrapper}}',
-      Templates.materialAppContent,
-    );
-
-    final counterControllerFile = File(
-      '${projectDir.path}/lib/controllers/counter_controller.dart',
-    );
-    await counterControllerFile.create(recursive: true);
-    await counterControllerFile.writeAsString(
-      StateManagementTemplates.getxControllerContent,
-    );
-
-    homePageContent = StateManagementTemplates.getxHomePageContent;
-
-    logDebug('Successfully generated and updated files for GetX');
+    logInfo('Successfully generated and updated files for BLoC');
   } else {
     mainFileContent = mainFileContent.replaceAll(
       '{{materialAppWrapper}}',
@@ -386,41 +366,27 @@ Future<Map<String, String>> _handleRoutingFiles(
     await goRouterFile.writeAsString(
       Templates.goRouterContent.replaceAll("const HomePage()", "HomePage()"),
     );
-    logDebug('Successfully generated and updated ${goRouterFile.path}');
+    logInfo('Successfully generated and updated ${goRouterFile.path}');
 
     final routeNamesFile = File('${projectDir.path}/lib/router/routes.dart');
     await routeNamesFile.create(recursive: true);
     await routeNamesFile.writeAsString(Templates.routeNames);
 
-    if (config.stateManagement == StateManagementOption.getx) {
-      mainFileContent = mainFileContent.replaceAll(
-        '{{materialApp}}',
-        'GetMaterialApp',
-      );
-    } else {
-      mainFileContent = mainFileContent.replaceAll(
-        '{{materialApp}}',
-        'MaterialApp.router',
-      );
-    }
+    mainFileContent = mainFileContent.replaceAll(
+      '{{materialApp}}',
+      'MaterialApp.router',
+    );
     mainFileContent = mainFileContent.replaceAll('{{router}}', '''
     routerConfig: appRouter,
     ''');
     mainFileContent = mainFileContent.replaceAll('{{home}}', '');
 
-    logDebug('Successfully generated and updated ${routeNamesFile.path}');
+    logInfo('Successfully generated and updated ${routeNamesFile.path}');
   } else {
-    if (config.stateManagement == StateManagementOption.getx) {
-      mainFileContent = mainFileContent.replaceAll(
-        '{{materialApp}}',
-        'GetMaterialApp',
-      );
-    } else {
-      mainFileContent = mainFileContent.replaceAll(
-        '{{materialApp}}',
-        'MaterialApp',
-      );
-    }
+    mainFileContent = mainFileContent.replaceAll(
+      '{{materialApp}}',
+      'MaterialApp',
+    );
     mainFileContent = mainFileContent.replaceAll('{{router}}', '');
     mainImports += 'import \'home_page.dart\';\n';
     mainFileContent = mainFileContent.replaceAll(
@@ -452,7 +418,7 @@ Future<Map<String, String>> _handleThemeFiles(
     await appThemeFile.create(recursive: true);
     await appThemeFile.writeAsString(Templates.appThemeContent);
 
-    logDebug('Successfully generated and updated ${appThemeFile.path}');
+    logInfo('Successfully generated and updated ${appThemeFile.path}');
   } else {
     mainFileContent = mainFileContent.replaceAll('{{theme}}', '');
   }
@@ -465,12 +431,12 @@ Future<void> _createConstantFiles(Directory projectDir) async {
   final colorsFile = File('${projectDir.path}/lib/constants/colors.dart');
   await colorsFile.create(recursive: true);
   await colorsFile.writeAsString(Templates.colorsContent);
-  logDebug('Successfully generated and updated ${colorsFile.path}');
+  logInfo('Successfully generated and updated ${colorsFile.path}');
 
   final assetsFile = File('${projectDir.path}/lib/constants/assets.dart');
   await assetsFile.create(recursive: true);
   await assetsFile.writeAsString(Templates.assetsContent);
-  logDebug('Successfully generated and updated ${assetsFile.path}');
+  logInfo('Successfully generated and updated ${assetsFile.path}');
 }
 
 /// Writes the final `main.dart` and `home_page.dart` files to the project directory.
@@ -483,9 +449,9 @@ Future<void> _writeFinalProjectFiles(
   final mainFile = File('${projectDir.path}/lib/main.dart');
   mainFileContent = mainFileContent.replaceAll('{{imports}}', mainImports);
   await mainFile.writeAsString(mainFileContent);
-  logDebug('Successfully generated and updated ${mainFile.path}');
+  logInfo('Successfully generated and updated ${mainFile.path}');
 
   final homePageFile = File('${projectDir.path}/lib/home_page.dart');
   await homePageFile.writeAsString(homePageContent);
-  logDebug('Successfully generated and updated ${homePageFile.path}');
+  logInfo('Successfully generated and updated ${homePageFile.path}');
 }
