@@ -7,7 +7,15 @@ A simple CLI tool to scaffold Flutter projects with custom setups. Inspired by `
 ## 🚀 Features
 
 - Interactive prompts to configure your Flutter project
-- Add state management, routing, and project structure
+- Non-interactive mode via CLI flags for scripting and automation
+- Dry-run mode to preview what would be generated without touching the file system
+- State management scaffolding: Provider, Riverpod, or BLoC/Cubit
+- Routing scaffolding: GoRouter or AutoRoute
+- Optional `flex_color_scheme` theming setup
+- Optional `LocalStorageService` using `shared_preferences`
+- Optional `SizeUtils` helper for responsive design
+- Optional `flutter_dotenv` environment variable setup
+- Standard `lib/` folder structure (features, models, services, utils, constants)
 - One-liner setup from anywhere
 
 ---
@@ -36,29 +44,53 @@ create_flutter_app
 
 This will start an interactive prompt that guides you through the project setup.
 
-#### Interactive Prompts:
+You can also pass flags to skip individual prompts or run fully non-interactively:
 
-The `create_flutter_app` tool provides the following configuration options:
+```sh
+create_flutter_app --name my_app --state-management riverpod --routing goRouter --flex-color-scheme
+```
 
-- **Project Name:** The name of your new Flutter project. This will also be used as the directory name.
+---
+
+## ⚙️ CLI Options
+
+| Flag / Option | Short | Description |
+|---|---|---|
+| `--help` | `-h` | Show the help message and exit. |
+| `--version` | `-v` | Print the tool version and exit. |
+| `--dry-run` | | Print what would be created without running any commands or writing any files. |
+| `--name <name>` | `-n` | Project name (snake_case). Skips the interactive name prompt. |
+| `--state-management <option>` | `-s` | State management solution (`none`, `provider`, `riverpod`, `bloc`). |
+| `--routing <option>` | `-r` | Routing solution (`none`, `goRouter`, `autoRoute`). |
+| `--flex-color-scheme` | | Include `flex_color_scheme` for theming. |
+| `--local-storage` | | Generate a `LocalStorageService` using `shared_preferences`. |
+| `--size-utils` | | Generate a `SizeUtils` helper for responsive design. |
+| `--dotenv` | | Generate a `.env` file and `flutter_dotenv` setup. |
+
+---
+
+## 🎛️ Interactive Prompts
+
+When running without flags, `create_flutter_app` guides you through the following choices:
+
+- **Project Name:** The name of your new Flutter project (snake_case). Used as the directory name.
 - **State Management:** Choose your preferred state management solution:
   - `none`: No specific state management boilerplate.
   - `provider`: Integrates the `provider` package for simple state management.
-  - `riverpod`: Sets up `flutter_riverpod` for a more robust and testable approach.
-  - `bloc`: Configures the project with the `bloc` package for reactive state
-    management.
-  - `getx`: Uses the `get` package (GetX) for state management.
+  - `riverpod`: Sets up `flutter_riverpod` using the modern `NotifierProvider` API.
+  - `bloc`: Configures the project with `flutter_bloc` and a `CounterCubit` example.
 - **Routing:** Select a routing solution for navigation:
   - `none`: Basic Flutter Navigator 1.0.
   - `goRouter`: Integrates the `go_router` package for declarative routing.
+  - `autoRoute`: Integrates the `auto_route` package with code generation support.
 - **Use `flex_color_scheme` for theming:** (yes/no)
-  - If `yes`, the project will include `flex_color_scheme` for advanced theming capabilities.
-- **Create a `LocalStorageService` using `shared_prefs`:** (yes/no)
-  - If `yes`, a utility service for local data persistence using `shared_preferences` will be generated.
+  - If `yes`, includes `flex_color_scheme` with a pre-configured light and dark `AppTheme`.
+- **Create a `LocalStorageService` using `shared_preferences`:** (yes/no)
+  - If `yes`, generates a type-safe `LocalStorageService` wrapper around `shared_preferences`.
 - **Initialize `SizeUtils` for responsive design:** (yes/no)
-  - If `yes`, a helper class for responsive UI adjustments based on screen size will be included.
+  - If `yes`, generates a `SizeUtils` helper that scales dimensions relative to a design baseline.
 - **Initialize `flutter_dotenv` for environment variables:** (yes/no)
-  - If `yes`, a `.env` file and necessary imports will be added for managing environment variables.
+  - If `yes`, adds a `.env` file (pre-added to `.gitignore`) and the necessary `flutter_dotenv` setup.
 
 ---
 

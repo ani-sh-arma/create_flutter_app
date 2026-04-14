@@ -17,9 +17,11 @@ jobs:
           sdk: stable
       - name: Install dependencies
         run: dart pub get
-      - name: Run tests
-        run: dart test
+      - name: Verify formatting
+        run: dart format --set-exit-if-changed .
       - name: Analyze project source
         run: dart analyze --fatal-infos
-      - name: Format code
-        run: dart format --set-exit-if-changed .
+      - name: Run tests
+        run: dart test
+      - name: Compile binary (smoke test)
+        run: dart compile exe bin/create_flutter_app.dart -o /tmp/create_flutter_app

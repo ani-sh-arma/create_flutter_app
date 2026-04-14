@@ -1,53 +1,156 @@
 import 'dart:io';
-import 'dart:async';
 
 import 'package:create_flutter_app/config.dart';
 import 'package:create_flutter_app/logger.dart';
 import 'package:create_flutter_app/templates.dart';
 
+// ---------------------------------------------------------------------------
+// Typed scaffold context — replaces the brittle Map<String, String> pattern.
+// ---------------------------------------------------------------------------
+
+/// Holds the mutable state that is built up as each `_handle*` function runs.
+class _ScaffoldContext {
+  String mainFileContent;
+  String mainImports;
+  String homePageContent;
+
+  _ScaffoldContext({
+    required this.mainFileContent,
+    required this.mainImports,
+    required this.homePageContent,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Public entry-point
+// ---------------------------------------------------------------------------
+
 /// Scaffolds a new Flutter project based on the provided [config].
 ///
+/// When [config.dryRun] is `true` the function only prints a summary of what
+/// would be created and exits without touching the file system.
+///
 /// This function orchestrates the entire project creation process:
-/// 1. Creates the base Flutter project.
-/// 2. Adds necessary dependencies based on user choices.
+/// 1. Creates the base Flutter project via `flutter create`.
+/// 2. Adds necessary dependencies via `flutter pub add`.
 /// 3. Generates and modifies project files.
-/// 4. Formats the newly generated project.
+/// 4. Formats the newly generated project with `dart format`.
 Future<void> scaffoldProject(Config config) async {
-  logInfo("Creating project...");
-  await _createProject(config);
-  logInfo("Adding dependencies...");
-  await _addDependencies(config);
-  logInfo("Generating project files...");
-  await _generateProjectFiles(config);
+  if (config.dryRun) {
+    _printDryRunSummary(config);
+    return;
+  }
 
-  logInfo("Formatting project...");
   final projectDir = Directory(config.projectName);
 
-  final result = await Process.run(
+  // Register a SIGINT handler so Ctrl+C cleans up any partial output.
+  ProcessSignal.sigint.watch().listen((_) async {
+    logWarning('Scaffolding cancelled. Cleaning up...');
+    if (await projectDir.exists()) {
+      await projectDir.delete(recursive: true);
+      logSuccess('Cleaned up partial project directory.');
+    }
+    exit(130);
+  });
+
+  logInfo('Creating project...');
+  await _createProject(config);
+
+  logInfo('Adding dependencies...');
+  await _addDependencies(config);
+
+  logInfo('Generating project files...');
+  await _generateProjectFiles(config);
+
+  logInfo('Formatting project...');
+  final fmtResult = await Process.run(
     'dart',
     ['format', '.'],
     runInShell: true,
     workingDirectory: projectDir.path,
   );
 
-  if (result.exitCode == 0) {
-    logInfo("[ Formatted Project ]\n${result.stdout}");
+  if (fmtResult.exitCode == 0) {
+    logInfo('[ Formatted Project ]\n${fmtResult.stdout}');
   } else {
-    logError("[ Formatting Project Failed ]\n${result.stderr}");
+    logError('[ Formatting Project Failed ]\n${fmtResult.stderr}');
+    exit(1);
   }
-  logSuccess("Project created successfully!");
+
+  logSuccess('Project created successfully!');
 }
 
-/// Creates a new Flutter project with the given [config.projectName].
-///
-/// Throws an [Exit] exception if a project with the same name already exists
-/// or if the Flutter SDK is not found.
+// ---------------------------------------------------------------------------
+// Dry-run output
+// ---------------------------------------------------------------------------
+
+void _printDryRunSummary(Config config) {
+  logInfo('=== DRY RUN — nothing will be created ===\n');
+  logInfo('Project name   : ${config.projectName}');
+  logInfo('State mgmt     : ${config.stateManagement.name}');
+  logInfo('Routing        : ${config.routing.name}');
+  logInfo('FlexColorScheme: ${config.useFlexColorScheme}');
+  logInfo('LocalStorage   : ${config.createLocalStorageService}');
+  logInfo('SizeUtils      : ${config.initializeSizeUtils}');
+  logInfo('DotEnv         : ${config.initializeDotEnv}');
+
+  final deps = _computeDependencies(config);
+  if (deps.isNotEmpty) {
+    logInfo('\nDependencies to add: ${deps.join(', ')}');
+  }
+
+  logInfo('\nFiles that would be generated:');
+  logInfo('  ${config.projectName}/lib/main.dart');
+  logInfo('  ${config.projectName}/lib/home_page.dart');
+  logInfo('  ${config.projectName}/lib/constants/colors.dart');
+  logInfo('  ${config.projectName}/lib/constants/assets.dart');
+
+  // Folder structure
+  for (final dir in ['features', 'models', 'services', 'utils', 'constants']) {
+    logInfo('  ${config.projectName}/lib/$dir/  (directory)');
+  }
+
+  if (config.initializeSizeUtils) {
+    logInfo('  ${config.projectName}/lib/utils/size_utils.dart');
+  }
+  if (config.initializeDotEnv) {
+    logInfo('  ${config.projectName}/.env');
+  }
+  if (config.createLocalStorageService) {
+    logInfo('  ${config.projectName}/lib/services/local_storage_service.dart');
+  }
+  if (config.stateManagement == StateManagementOption.provider) {
+    logInfo('  ${config.projectName}/lib/providers/counter_provider.dart');
+  }
+  if (config.stateManagement == StateManagementOption.riverpod) {
+    logInfo('  ${config.projectName}/lib/providers/counter_notifier.dart');
+  }
+  if (config.stateManagement == StateManagementOption.bloc) {
+    logInfo('  ${config.projectName}/lib/cubits/counter_cubit.dart');
+  }
+  if (config.routing == RoutingOption.goRouter) {
+    logInfo('  ${config.projectName}/lib/router/router.dart');
+    logInfo('  ${config.projectName}/lib/router/routes.dart');
+  }
+  if (config.routing == RoutingOption.autoRoute) {
+    logInfo('  ${config.projectName}/lib/router/router.dart');
+  }
+  if (config.useFlexColorScheme) {
+    logInfo('  ${config.projectName}/lib/constants/theme.dart');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// flutter create
+// ---------------------------------------------------------------------------
+
 Future<void> _createProject(Config config) async {
   final projectDir = Directory(config.projectName);
 
   if (await projectDir.exists()) {
     logError(
-      "Error: A project named '${config.projectName}' already exists. Please delete it or choose a different name.",
+      "Error: A project named '${config.projectName}' already exists. "
+      'Please delete it or choose a different name.',
     );
     exit(1);
   }
@@ -59,399 +162,475 @@ Future<void> _createProject(Config config) async {
     ], runInShell: true);
 
     if (result.exitCode == 0) {
-      logInfo("[ Creating Project ]\n${result.stdout}");
+      logInfo('[ Creating Project ]\n${result.stdout}');
     } else {
-      logError("[ Creating Project Failed ]\n${result.stderr}");
+      logError('[ Creating Project Failed ]\n${result.stderr}');
+      exit(1);
     }
   } on ProcessException catch (e) {
     logError(
-      "Error: Flutter command not found. Please ensure Flutter SDK is installed and added to PATH.\nDetails: ${e.message}",
+      'Error: Flutter command not found. Please ensure Flutter SDK is installed '
+      'and added to PATH.\nDetails: ${e.message}',
     );
     exit(1);
   }
 }
 
-/// Adds necessary Dart/Flutter dependencies to the newly created project
-/// based on the user's [config].
-Future<void> _addDependencies(Config config) async {
-  List<String> dependencies = [];
+// ---------------------------------------------------------------------------
+// flutter pub add
+// ---------------------------------------------------------------------------
+
+/// Returns the list of packages that need to be added for [config].
+List<String> _computeDependencies(Config config) {
+  final deps = <String>[];
 
   switch (config.stateManagement) {
     case StateManagementOption.none:
       break;
     case StateManagementOption.provider:
-      dependencies.add('provider');
-      break;
+      deps.add('provider');
     case StateManagementOption.riverpod:
-      dependencies.add('flutter_riverpod');
-      break;
+      deps.add('flutter_riverpod');
     case StateManagementOption.bloc:
-      dependencies.add('flutter_bloc');
-      break;
-    case StateManagementOption.getx:
-      break;
+      deps.add('flutter_bloc');
   }
 
   switch (config.routing) {
     case RoutingOption.none:
       break;
     case RoutingOption.goRouter:
-      dependencies.add('go_router');
-      break;
+      deps.add('go_router');
+    case RoutingOption.autoRoute:
+      deps.add('auto_route');
   }
 
-  if (config.useFlexColorScheme) {
-    dependencies.add('flex_color_scheme');
-  }
+  if (config.useFlexColorScheme) deps.add('flex_color_scheme');
+  if (config.createLocalStorageService) deps.add('shared_preferences');
+  if (config.initializeDotEnv) deps.add('flutter_dotenv');
 
-  if (config.createLocalStorageService) {
-    dependencies.add('shared_preferences');
-  }
+  return deps;
+}
 
-  if (config.initializeDotEnv) {
-    dependencies.add('flutter_dotenv');
-  }
+Future<void> _addDependencies(Config config) async {
+  final deps = _computeDependencies(config);
 
-  if (dependencies.isNotEmpty) {
-    logInfo("Adding dependencies: $dependencies");
+  if (deps.isNotEmpty) {
+    logInfo('Adding dependencies: $deps');
     final projectDir = Directory(config.projectName);
     final result = await Process.run(
       'flutter',
-      ['pub', 'add', ...dependencies],
+      ['pub', 'add', ...deps],
       runInShell: true,
       workingDirectory: projectDir.path,
     );
 
     if (result.exitCode == 0) {
-      logInfo("[ Adding Dependencies ]\n${result.stdout}");
+      logInfo('[ Adding Dependencies ]\n${result.stdout}');
     } else {
-      logError("[ Adding Dependencies Failed ]\n${result.stderr}");
+      logError('[ Adding Dependencies Failed ]\n${result.stderr}');
+      exit(1);
+    }
+  }
+
+  // AutoRoute requires dev dependencies for code generation.
+  if (config.routing == RoutingOption.autoRoute) {
+    logInfo('Adding AutoRoute dev dependencies...');
+    final projectDir = Directory(config.projectName);
+    final devResult = await Process.run(
+      'flutter',
+      ['pub', 'add', '--dev', 'auto_route_generator', 'build_runner'],
+      runInShell: true,
+      workingDirectory: projectDir.path,
+    );
+
+    if (devResult.exitCode == 0) {
+      logInfo('[ Adding Dev Dependencies ]\n${devResult.stdout}');
+    } else {
+      logError('[ Adding Dev Dependencies Failed ]\n${devResult.stderr}');
+      exit(1);
     }
   }
 }
 
-/// Generates and modifies various project files based on the user's [config].
-///
-/// This includes handling utility files, state management setup, routing,
-/// theming, and creating constant files.
+// ---------------------------------------------------------------------------
+// File generation
+// ---------------------------------------------------------------------------
+
 Future<void> _generateProjectFiles(Config config) async {
   final projectDir = Directory(config.projectName);
-  String mainImports = '';
-  String homePageContent = Templates.homePageContent;
-  String mainFileContent = Templates.mainTemplate;
 
-  mainFileContent = _replaceAsyncPlaceholder(mainFileContent, config);
+  // Scaffold the standard lib/ folder structure.
+  await _createFolderStructure(projectDir);
 
-  // Handle utility files
-  final utilityFilesResult = await _handleUtilityFiles(
-    config,
-    projectDir,
-    mainFileContent,
-    mainImports,
+  var ctx = _ScaffoldContext(
+    mainFileContent: Templates.mainTemplate,
+    mainImports: '',
+    homePageContent: Templates.homePageContent,
   );
-  mainFileContent = utilityFilesResult['mainFileContent']!;
-  mainImports = utilityFilesResult['mainImports']!;
 
-  // Handle state management files
-  final stateManagementResult = await _handleStateManagementFiles(
-    config,
-    projectDir,
-    mainFileContent,
-    homePageContent,
-    mainImports,
-  );
-  mainFileContent = stateManagementResult['mainFileContent']!;
-  homePageContent = stateManagementResult['homePageContent']!;
-  mainImports = stateManagementResult['mainImports']!;
+  ctx.mainFileContent = _replaceAsyncPlaceholder(ctx.mainFileContent, config);
 
-  // Handle routing files
-  final routingResult = await _handleRoutingFiles(
-    config,
-    projectDir,
-    mainFileContent,
-    mainImports,
-  );
-  mainFileContent = routingResult['mainFileContent']!;
-  mainImports = routingResult['mainImports']!;
+  ctx = await _handleUtilityFiles(config, projectDir, ctx);
+  ctx = await _handleStateManagementFiles(config, projectDir, ctx);
+  ctx = await _handleRoutingFiles(config, projectDir, ctx);
+  ctx = await _handleThemeFiles(config, projectDir, ctx);
 
-  // Handle theme files
-  final themeResult = await _handleThemeFiles(
-    config,
-    projectDir,
-    mainFileContent,
-    mainImports,
-  );
-  mainFileContent = themeResult['mainFileContent']!;
-  mainImports = themeResult['mainImports']!;
-
-  // Create constant files
   await _createConstantFiles(projectDir);
-
-  // Write final project files
-  await _writeFinalProjectFiles(
-    projectDir,
-    mainFileContent,
-    homePageContent,
-    mainImports,
-  );
+  await _writeFinalProjectFiles(projectDir, ctx, config);
 }
 
-/// Replaces the `{{async}}` placeholder in the main file content based on config.
-///
-/// If `initializeDotEnv` or `createLocalStorageService` is true,
-/// the placeholder is replaced with 'async', otherwise with an empty string.
-String _replaceAsyncPlaceholder(String mainFileContent, Config config) {
-  if (config.initializeDotEnv || config.createLocalStorageService) {
-    return mainFileContent.replaceAll('{{async}}', 'async');
-  } else {
-    return mainFileContent.replaceAll('{{async}}', '');
+// ---------------------------------------------------------------------------
+// Folder structure
+// ---------------------------------------------------------------------------
+
+/// Creates the standard `lib/` folder structure with `.gitkeep` placeholders.
+Future<void> _createFolderStructure(Directory projectDir) async {
+  const dirs = ['features', 'models', 'services', 'utils', 'constants'];
+  for (final dir in dirs) {
+    final d = Directory('${projectDir.path}/lib/$dir');
+    await d.create(recursive: true);
+    // Place a .gitkeep so git tracks the empty directory.
+    final gitkeep = File('${d.path}/.gitkeep');
+    if (!await gitkeep.exists()) {
+      await gitkeep.create();
+    }
+    logInfo('Created directory: ${d.path}');
   }
 }
 
-/// Handles the generation and updates for utility files like `size_utils.dart`,
-/// `.env`, and `local_storage_service.dart` based on the [config].
-///
-/// Returns a map containing the updated `mainFileContent` and `mainImports`.
-Future<Map<String, String>> _handleUtilityFiles(
+// ---------------------------------------------------------------------------
+// Placeholder helpers
+// ---------------------------------------------------------------------------
+
+String _replaceAsyncPlaceholder(String mainFileContent, Config config) {
+  final needsAsync =
+      config.initializeDotEnv || config.createLocalStorageService;
+  return mainFileContent.replaceAll('{{async}}', needsAsync ? 'async' : '');
+}
+
+// ---------------------------------------------------------------------------
+// Utility files (SizeUtils, .env, LocalStorageService)
+// ---------------------------------------------------------------------------
+
+Future<_ScaffoldContext> _handleUtilityFiles(
   Config config,
   Directory projectDir,
-  String mainFileContent,
-  String mainImports,
+  _ScaffoldContext ctx,
 ) async {
   if (config.initializeSizeUtils) {
-    mainImports += 'import \'utils/size_utils.dart\';\n';
-    mainFileContent = mainFileContent.replaceAll('{{sizeUtils}}', '''
-    final SizeUtils sizeUtils = SizeUtils();
-    sizeUtils.init(context);
-    ''');
+    ctx.mainImports += "import 'utils/size_utils.dart';\n";
+    // SizeUtils.init() is injected via MaterialApp.builder (see
+    // _handleRoutingFiles / _handleStateManagementFiles) so that it runs
+    // inside a widget tree that has MediaQuery available.
+    ctx.mainFileContent = ctx.mainFileContent.replaceAll('{{sizeUtils}}', '');
+
     final sizeUtilsFile = File('${projectDir.path}/lib/utils/size_utils.dart');
     await sizeUtilsFile.create(recursive: true);
     await sizeUtilsFile.writeAsString(Templates.sizeUtilsContent);
-    logInfo('Successfully generated and updated ${sizeUtilsFile.path}');
+    logInfo('Generated: ${sizeUtilsFile.path}');
   } else {
-    mainFileContent = mainFileContent.replaceAll('{{sizeUtils}}', '');
+    ctx.mainFileContent = ctx.mainFileContent.replaceAll('{{sizeUtils}}', '');
   }
 
   if (config.initializeDotEnv) {
-    mainImports += 'import \'package:flutter_dotenv/flutter_dotenv.dart\';\n';
-    mainFileContent = mainFileContent.replaceAll('{{dotEnv}}', '''
-    await dotenv.load(fileName: '.env');
-    ''');
+    ctx.mainImports += "import 'package:flutter_dotenv/flutter_dotenv.dart';\n";
+    ctx.mainFileContent = ctx.mainFileContent.replaceAll(
+      '{{dotEnv}}',
+      "await dotenv.load(fileName: '.env');",
+    );
+
     final dotEnvFile = File('${projectDir.path}/.env');
     await dotEnvFile.create(recursive: true);
     await dotEnvFile.writeAsString(Templates.dotEnvContent);
+    logInfo('Generated: ${dotEnvFile.path}');
 
-    logInfo('Successfully generated and updated ${dotEnvFile.path}');
+    // Add .env to the project's .gitignore so it is never committed.
+    final gitignoreFile = File('${projectDir.path}/.gitignore');
+    if (await gitignoreFile.exists()) {
+      final existing = await gitignoreFile.readAsString();
+      if (!existing.contains('.env')) {
+        await gitignoreFile.writeAsString(
+          '$existing\n# Environment variables — never commit these.\n.env\n*.env\n',
+        );
+        logInfo('Added .env entries to ${gitignoreFile.path}');
+      }
+    }
   } else {
-    mainFileContent = mainFileContent.replaceAll('{{dotEnv}}', '');
+    ctx.mainFileContent = ctx.mainFileContent.replaceAll('{{dotEnv}}', '');
   }
 
   if (config.createLocalStorageService) {
-    mainImports += 'import \'services/local_storage_service.dart\';\n';
-    mainFileContent = mainFileContent.replaceAll('{{localStorage}}', '''
-    await LocalStorageService.init();
-    ''');
+    ctx.mainImports += "import 'services/local_storage_service.dart';\n";
+    ctx.mainFileContent = ctx.mainFileContent.replaceAll(
+      '{{localStorage}}',
+      'await LocalStorageService.init();',
+    );
+
     final localStorageFile = File(
       '${projectDir.path}/lib/services/local_storage_service.dart',
     );
     await localStorageFile.create(recursive: true);
     await localStorageFile.writeAsString(Templates.localStorageServiceContent);
-
-    logInfo('Successfully generated and updated ${localStorageFile.path}');
+    logInfo('Generated: ${localStorageFile.path}');
   } else {
-    mainFileContent = mainFileContent.replaceAll('{{localStorage}}', '');
+    ctx.mainFileContent = ctx.mainFileContent.replaceAll(
+      '{{localStorage}}',
+      '',
+    );
   }
 
-  return {'mainFileContent': mainFileContent, 'mainImports': mainImports};
+  return ctx;
 }
 
-/// Handles state management related file generation and main file content updates
-/// based on the [config].
-///
-/// Returns a map containing the updated `mainFileContent`, `homePageContent`,
-/// and `mainImports`.
-Future<Map<String, String>> _handleStateManagementFiles(
+// ---------------------------------------------------------------------------
+// State management files
+// ---------------------------------------------------------------------------
+
+Future<_ScaffoldContext> _handleStateManagementFiles(
   Config config,
   Directory projectDir,
-  String mainFileContent,
-  String homePageContent,
-  String mainImports,
+  _ScaffoldContext ctx,
 ) async {
-  if (config.stateManagement == StateManagementOption.provider) {
-    mainImports += 'import \'package:provider/provider.dart\';\n';
-    mainImports += 'import \'providers/counter_provider.dart\';\n';
-    mainFileContent = mainFileContent.replaceAll('{{materialAppWrapper}}', '''
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => CounterProvider()),
-        // Add more providers here
-      ],
-      child: ${Templates.materialAppContent.replaceAll(";", ",")}
-    );
-    ''');
-    final counterProviderFile = File(
-      '${projectDir.path}/lib/providers/counter_provider.dart',
-    );
-    await counterProviderFile.create(recursive: true);
-    await counterProviderFile.writeAsString(
-      StateManagementTemplates.counterProviderContent,
-    );
+  final materialApp = _buildMaterialAppContent(config);
 
-    homePageContent = StateManagementTemplates.proviiderHomePageContent;
+  switch (config.stateManagement) {
+    case StateManagementOption.provider:
+      ctx.mainImports += "import 'package:provider/provider.dart';\n";
+      ctx.mainImports += "import 'providers/counter_provider.dart';\n";
+      ctx.mainFileContent = ctx.mainFileContent.replaceAll(
+        '{{materialAppWrapper}}',
+        'MultiProvider(\n'
+            '    providers: [\n'
+            '      ChangeNotifierProvider(create: (_) => CounterProvider()),\n'
+            '      // Add more providers here.\n'
+            '    ],\n'
+            '    child: $materialApp\n'
+            '  );',
+      );
 
-    logInfo('Successfully generated and updated ${counterProviderFile.path}');
-  } else if (config.stateManagement == StateManagementOption.riverpod) {
-    mainImports +=
-        'import \'package:flutter_riverpod/flutter_riverpod.dart\';\n';
-    mainFileContent = mainFileContent.replaceAll('{{materialAppWrapper}}', '''
-    ProviderScope(
-      child: ${Templates.materialAppContent.replaceAll(";", ",")}
-    );
-    ''');
-    homePageContent = StateManagementTemplates.riverpodHomePageContent;
+      final counterProviderFile = File(
+        '${projectDir.path}/lib/providers/counter_provider.dart',
+      );
+      await counterProviderFile.create(recursive: true);
+      await counterProviderFile.writeAsString(
+        StateManagementTemplates.counterProviderContent,
+      );
+      logInfo('Generated: ${counterProviderFile.path}');
 
-    logInfo('Successfully generated and updated files for Riverpod');
-  } else if (config.stateManagement == StateManagementOption.bloc) {
-    mainImports += 'import \'package:flutter_bloc/flutter_bloc.dart\';\n';
-    mainImports += 'import \'cubits/counter_cubit.dart\';\n';
-    mainFileContent = mainFileContent.replaceAll('{{materialAppWrapper}}', '''
-    MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (_) => CounterCubit()),
-        // Add more blocs here
-      ],
-      child: ${Templates.materialAppContent.replaceAll(";", ",")}
-    );
-    ''');
-    final counterCubitFile = File(
-      '${projectDir.path}/lib/cubits/counter_cubit.dart',
-    );
-    await counterCubitFile.create(recursive: true);
-    await counterCubitFile.writeAsString(
-      StateManagementTemplates.cubitTemplate,
-    );
+      ctx.homePageContent = StateManagementTemplates.providerHomePageContent;
 
-    homePageContent = StateManagementTemplates.blocHomePageContent;
+    case StateManagementOption.riverpod:
+      ctx.mainImports +=
+          "import 'package:flutter_riverpod/flutter_riverpod.dart';\n";
+      ctx.mainFileContent = ctx.mainFileContent.replaceAll(
+        '{{materialAppWrapper}}',
+        'ProviderScope(\n'
+            '    child: $materialApp\n'
+            '  );',
+      );
 
-    logInfo('Successfully generated and updated files for BLoC');
-  } else {
-    mainFileContent = mainFileContent.replaceAll(
-      '{{materialAppWrapper}}',
-      Templates.materialAppContent,
-    );
+      final counterNotifierFile = File(
+        '${projectDir.path}/lib/providers/counter_notifier.dart',
+      );
+      await counterNotifierFile.create(recursive: true);
+      await counterNotifierFile.writeAsString(
+        StateManagementTemplates.counterNotifierContent,
+      );
+      logInfo('Generated: ${counterNotifierFile.path}');
+
+      ctx.homePageContent = StateManagementTemplates.riverpodHomePageContent;
+
+    case StateManagementOption.bloc:
+      ctx.mainImports += "import 'package:flutter_bloc/flutter_bloc.dart';\n";
+      ctx.mainImports += "import 'cubits/counter_cubit.dart';\n";
+      ctx.mainFileContent = ctx.mainFileContent.replaceAll(
+        '{{materialAppWrapper}}',
+        'MultiBlocProvider(\n'
+            '    providers: [\n'
+            '      BlocProvider(create: (_) => CounterCubit()),\n'
+            '      // Add more blocs here.\n'
+            '    ],\n'
+            '    child: $materialApp\n'
+            '  );',
+      );
+
+      final counterCubitFile = File(
+        '${projectDir.path}/lib/cubits/counter_cubit.dart',
+      );
+      await counterCubitFile.create(recursive: true);
+      await counterCubitFile.writeAsString(
+        StateManagementTemplates.cubitTemplate,
+      );
+      logInfo('Generated: ${counterCubitFile.path}');
+
+      ctx.homePageContent = StateManagementTemplates.blocHomePageContent;
+
+    case StateManagementOption.none:
+      ctx.mainFileContent = ctx.mainFileContent.replaceAll(
+        '{{materialAppWrapper}}',
+        materialApp,
+      );
   }
 
-  return {
-    'mainFileContent': mainFileContent,
-    'homePageContent': homePageContent,
-    'mainImports': mainImports,
-  };
+  return ctx;
 }
 
-/// Handles routing related file generation and main file content updates
-/// based on the [config].
-///
-/// Returns a map containing the updated `mainFileContent` and `mainImports`.
-Future<Map<String, String>> _handleRoutingFiles(
+// ---------------------------------------------------------------------------
+// Routing files
+// ---------------------------------------------------------------------------
+
+Future<_ScaffoldContext> _handleRoutingFiles(
   Config config,
   Directory projectDir,
-  String mainFileContent,
-  String mainImports,
+  _ScaffoldContext ctx,
 ) async {
-  if (config.routing == RoutingOption.goRouter) {
-    mainImports += 'import \'router/router.dart\';\n';
+  switch (config.routing) {
+    case RoutingOption.goRouter:
+      ctx.mainImports += "import 'router/router.dart';\n";
 
-    final goRouterFile = File('${projectDir.path}/lib/router/router.dart');
-    await goRouterFile.create(recursive: true);
-    await goRouterFile.writeAsString(
-      Templates.goRouterContent.replaceAll("const HomePage()", "HomePage()"),
-    );
-    logInfo('Successfully generated and updated ${goRouterFile.path}');
+      final goRouterFile = File('${projectDir.path}/lib/router/router.dart');
+      await goRouterFile.create(recursive: true);
+      await goRouterFile.writeAsString(Templates.goRouterContent);
+      logInfo('Generated: ${goRouterFile.path}');
 
-    final routeNamesFile = File('${projectDir.path}/lib/router/routes.dart');
-    await routeNamesFile.create(recursive: true);
-    await routeNamesFile.writeAsString(Templates.routeNames);
+      final routeNamesFile = File('${projectDir.path}/lib/router/routes.dart');
+      await routeNamesFile.create(recursive: true);
+      await routeNamesFile.writeAsString(Templates.routeNames);
+      logInfo('Generated: ${routeNamesFile.path}');
 
-    mainFileContent = mainFileContent.replaceAll(
-      '{{materialApp}}',
-      'MaterialApp.router',
-    );
-    mainFileContent = mainFileContent.replaceAll('{{router}}', '''
-    routerConfig: appRouter,
-    ''');
-    mainFileContent = mainFileContent.replaceAll('{{home}}', '');
+      ctx.mainFileContent = ctx.mainFileContent
+          .replaceAll('{{materialApp}}', 'MaterialApp.router')
+          .replaceAll('{{router}}', 'routerConfig: appRouter,')
+          .replaceAll('{{home}}', '');
 
-    logInfo('Successfully generated and updated ${routeNamesFile.path}');
-  } else {
-    mainFileContent = mainFileContent.replaceAll(
-      '{{materialApp}}',
-      'MaterialApp',
-    );
-    mainFileContent = mainFileContent.replaceAll('{{router}}', '');
-    mainImports += 'import \'home_page.dart\';\n';
-    mainFileContent = mainFileContent.replaceAll(
-      '{{home}}',
-      ' home: HomePage(),',
-    );
+    case RoutingOption.autoRoute:
+      ctx.mainImports += "import 'router/router.dart';\n";
+
+      final autoRouterFile = File('${projectDir.path}/lib/router/router.dart');
+      await autoRouterFile.create(recursive: true);
+      await autoRouterFile.writeAsString(Templates.autoRouterContent);
+      logInfo('Generated: ${autoRouterFile.path}');
+
+      // AutoRoute home page needs @RoutePage() annotation.
+      ctx.homePageContent = StateManagementTemplates.autoRouteHomePageContent;
+
+      ctx.mainFileContent = ctx.mainFileContent
+          .replaceAll('{{materialApp}}', 'MaterialApp.router')
+          .replaceAll(
+            '{{router}}',
+            'routerDelegate: appRouter.delegate(),\n'
+                '    routeInformationParser: appRouter.defaultRouteParser(),',
+          )
+          .replaceAll('{{home}}', '');
+
+    case RoutingOption.none:
+      ctx.mainImports += "import 'home_page.dart';\n";
+      ctx.mainFileContent = ctx.mainFileContent
+          .replaceAll('{{materialApp}}', 'MaterialApp')
+          .replaceAll('{{router}}', '')
+          .replaceAll('{{home}}', 'home: const HomePage(),');
   }
-  return {'mainFileContent': mainFileContent, 'mainImports': mainImports};
+
+  return ctx;
 }
 
-/// Handles theme related file generation and main file content updates
-/// based on the [config].
-///
-/// Returns a map containing the updated `mainFileContent` and `mainImports`.
-Future<Map<String, String>> _handleThemeFiles(
+// ---------------------------------------------------------------------------
+// Theme files
+// ---------------------------------------------------------------------------
+
+Future<_ScaffoldContext> _handleThemeFiles(
   Config config,
   Directory projectDir,
-  String mainFileContent,
-  String mainImports,
+  _ScaffoldContext ctx,
 ) async {
   if (config.useFlexColorScheme) {
-    mainImports += 'import \'constants/theme.dart\';\n';
-    mainFileContent = mainFileContent.replaceAll('{{theme}}', '''
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-    ''');
+    ctx.mainImports += "import 'constants/theme.dart';\n";
+    ctx.mainFileContent = ctx.mainFileContent.replaceAll(
+      '{{theme}}',
+      'theme: AppTheme.light,\n    darkTheme: AppTheme.dark,',
+    );
 
     final appThemeFile = File('${projectDir.path}/lib/constants/theme.dart');
     await appThemeFile.create(recursive: true);
     await appThemeFile.writeAsString(Templates.appThemeContent);
-
-    logInfo('Successfully generated and updated ${appThemeFile.path}');
+    logInfo('Generated: ${appThemeFile.path}');
   } else {
-    mainFileContent = mainFileContent.replaceAll('{{theme}}', '');
+    ctx.mainFileContent = ctx.mainFileContent.replaceAll('{{theme}}', '');
   }
-  return {'mainFileContent': mainFileContent, 'mainImports': mainImports};
+
+  return ctx;
 }
 
-/// Creates constant files like `colors.dart` and `assets.dart` within the
-/// project's `lib/constants` directory.
+// ---------------------------------------------------------------------------
+// Constant files
+// ---------------------------------------------------------------------------
+
 Future<void> _createConstantFiles(Directory projectDir) async {
   final colorsFile = File('${projectDir.path}/lib/constants/colors.dart');
   await colorsFile.create(recursive: true);
   await colorsFile.writeAsString(Templates.colorsContent);
-  logInfo('Successfully generated and updated ${colorsFile.path}');
+  logInfo('Generated: ${colorsFile.path}');
 
   final assetsFile = File('${projectDir.path}/lib/constants/assets.dart');
   await assetsFile.create(recursive: true);
   await assetsFile.writeAsString(Templates.assetsContent);
-  logInfo('Successfully generated and updated ${assetsFile.path}');
+  logInfo('Generated: ${assetsFile.path}');
 }
 
-/// Writes the final `main.dart` and `home_page.dart` files to the project directory.
+// ---------------------------------------------------------------------------
+// Final file writing
+// ---------------------------------------------------------------------------
+
 Future<void> _writeFinalProjectFiles(
   Directory projectDir,
-  String mainFileContent,
-  String homePageContent,
-  String mainImports,
+  _ScaffoldContext ctx,
+  Config config,
 ) async {
+  // Replace remaining top-level placeholders.
+  var mainContent = ctx.mainFileContent
+      .replaceAll('{{imports}}', ctx.mainImports)
+      .replaceAll('{{title}}', config.projectName);
+
+  // Clean up any stray un-replaced placeholders.
+  mainContent = mainContent
+      .replaceAll('{{sizeUtils}}', '')
+      .replaceAll('{{dotEnv}}', '')
+      .replaceAll('{{localStorage}}', '')
+      .replaceAll('{{theme}}', '')
+      .replaceAll('{{home}}', '')
+      .replaceAll('{{router}}', '')
+      .replaceAll('{{builder}}', '');
+
   final mainFile = File('${projectDir.path}/lib/main.dart');
-  mainFileContent = mainFileContent.replaceAll('{{imports}}', mainImports);
-  await mainFile.writeAsString(mainFileContent);
-  logInfo('Successfully generated and updated ${mainFile.path}');
+  await mainFile.writeAsString(mainContent);
+  logInfo('Generated: ${mainFile.path}');
 
   final homePageFile = File('${projectDir.path}/lib/home_page.dart');
-  await homePageFile.writeAsString(homePageContent);
-  logInfo('Successfully generated and updated ${homePageFile.path}');
+  await homePageFile.writeAsString(ctx.homePageContent);
+  logInfo('Generated: ${homePageFile.path}');
+}
+
+// ---------------------------------------------------------------------------
+// MaterialApp content builder
+// ---------------------------------------------------------------------------
+
+/// Builds the MaterialApp (or MaterialApp.router) widget string with all
+/// placeholders filled in.  The [config.initializeSizeUtils] flag injects a
+/// `builder:` callback that gives [SizeUtils.init] a proper [MediaQuery]
+/// context — something that is not available when calling it directly from
+/// [MyApp.build].
+String _buildMaterialAppContent(Config config) {
+  final builderProp =
+      config.initializeSizeUtils
+          ? 'builder: (context, child) {\n'
+              '        SizeUtils.init(context);\n'
+              '        return child ?? const SizedBox.shrink();\n'
+              '      },'
+          : '';
+
+  return Templates.materialAppContent.replaceAll('{{builder}}', builderProp)
+  // Routing / home placeholders are resolved later in _handleRoutingFiles.
+  // Theme is resolved later in _handleThemeFiles.
+  // Keep remaining placeholders intact so downstream handlers can fill them.
+  ;
 }
