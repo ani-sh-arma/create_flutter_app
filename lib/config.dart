@@ -11,9 +11,6 @@ enum StateManagementOption {
 
   /// Uses the `flutter_bloc` package.
   bloc,
-
-  /// Uses the `get` package (GetX).
-  getx,
 }
 
 /// Defines the available routing options for the Flutter project.
@@ -21,8 +18,11 @@ enum RoutingOption {
   /// No specific routing solution (uses basic Navigator 1.0).
   none,
 
-  /// Uses the `go_router` package.
+  /// Uses the `go_router` package for declarative routing.
   goRouter,
+
+  /// Uses the `auto_route` package with code generation.
+  autoRoute,
 }
 
 /// Represents the complete configuration for a new Flutter project.
@@ -51,6 +51,10 @@ class Config {
   /// Whether to initialize `flutter_dotenv` for environment variables.
   final bool initializeDotEnv;
 
+  /// When true, prints what would be created without actually running any
+  /// commands or writing any files.
+  final bool dryRun;
+
   /// Creates a new [Config] instance with the specified project preferences.
   Config({
     required this.projectName,
@@ -60,6 +64,7 @@ class Config {
     required this.createLocalStorageService,
     required this.initializeSizeUtils,
     required this.initializeDotEnv,
+    this.dryRun = false,
   });
 
   @override
@@ -72,6 +77,7 @@ class Config {
       Create LocalStorageService: ${createLocalStorageService ? "Yes" : "No"}
       Initialize SizeUtils: ${initializeSizeUtils ? "Yes" : "No"}
       Initialize DotEnv: ${initializeDotEnv ? "Yes" : "No"}
+      Dry Run: ${dryRun ? "Yes" : "No"}
     ''';
   }
 }
