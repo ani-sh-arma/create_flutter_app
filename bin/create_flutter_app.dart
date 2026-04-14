@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:args/args.dart';
 import 'package:create_flutter_app/cli.dart';
 import 'package:create_flutter_app/scaffolder.dart';
 
@@ -9,7 +10,7 @@ const _version = '1.3.0';
 void main(List<String> arguments) async {
   final parser = buildArgParser();
 
-  late final args;
+  late final ArgResults args;
   try {
     args = parser.parse(arguments);
   } on FormatException catch (e) {

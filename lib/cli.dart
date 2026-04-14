@@ -207,8 +207,7 @@ Future<Config> promptUserPreferences(ArgResults args) async {
       (e) => e.name == args['state-management'],
     );
   } else {
-    final stateNames =
-        StateManagementOption.values.map((e) => e.name).toList();
+    final stateNames = StateManagementOption.values.map((e) => e.name).toList();
     final stateChoice = prompts.choose<String>(
       'Choose state management:',
       stateNames,
@@ -222,9 +221,7 @@ Future<Config> promptUserPreferences(ArgResults args) async {
   // --- routing ---
   final RoutingOption routing;
   if (args['routing'] != null) {
-    routing = RoutingOption.values.firstWhere(
-      (e) => e.name == args['routing'],
-    );
+    routing = RoutingOption.values.firstWhere((e) => e.name == args['routing']);
   } else {
     final routingNames = RoutingOption.values.map((e) => e.name).toList();
     final routingChoice =

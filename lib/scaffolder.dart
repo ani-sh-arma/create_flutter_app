@@ -156,11 +156,10 @@ Future<void> _createProject(Config config) async {
   }
 
   try {
-    final result = await Process.run(
-      'flutter',
-      ['create', config.projectName],
-      runInShell: true,
-    );
+    final result = await Process.run('flutter', [
+      'create',
+      config.projectName,
+    ], runInShell: true);
 
     if (result.exitCode == 0) {
       logInfo('[ Creating Project ]\n${result.stdout}');
@@ -334,8 +333,7 @@ Future<_ScaffoldContext> _handleUtilityFiles(
   }
 
   if (config.initializeDotEnv) {
-    ctx.mainImports +=
-        "import 'package:flutter_dotenv/flutter_dotenv.dart';\n";
+    ctx.mainImports += "import 'package:flutter_dotenv/flutter_dotenv.dart';\n";
     ctx.mainFileContent = ctx.mainFileContent.replaceAll(
       '{{dotEnv}}',
       "await dotenv.load(fileName: '.env');",
@@ -514,8 +512,7 @@ Future<_ScaffoldContext> _handleRoutingFiles(
       logInfo('Generated: ${autoRouterFile.path}');
 
       // AutoRoute home page needs @RoutePage() annotation.
-      ctx.homePageContent =
-          StateManagementTemplates.autoRouteHomePageContent;
+      ctx.homePageContent = StateManagementTemplates.autoRouteHomePageContent;
 
       ctx.mainFileContent = ctx.mainFileContent
           .replaceAll('{{materialApp}}', 'MaterialApp.router')
@@ -623,17 +620,17 @@ Future<void> _writeFinalProjectFiles(
 /// context — something that is not available when calling it directly from
 /// [MyApp.build].
 String _buildMaterialAppContent(Config config) {
-  final builderProp = config.initializeSizeUtils
-      ? 'builder: (context, child) {\n'
-          '        SizeUtils.init(context);\n'
-          '        return child ?? const SizedBox.shrink();\n'
-          '      },'
-      : '';
+  final builderProp =
+      config.initializeSizeUtils
+          ? 'builder: (context, child) {\n'
+              '        SizeUtils.init(context);\n'
+              '        return child ?? const SizedBox.shrink();\n'
+              '      },'
+          : '';
 
-  return Templates.materialAppContent
-      .replaceAll('{{builder}}', builderProp)
-      // Routing / home placeholders are resolved later in _handleRoutingFiles.
-      // Theme is resolved later in _handleThemeFiles.
-      // Keep remaining placeholders intact so downstream handlers can fill them.
-      ;
+  return Templates.materialAppContent.replaceAll('{{builder}}', builderProp)
+  // Routing / home placeholders are resolved later in _handleRoutingFiles.
+  // Theme is resolved later in _handleThemeFiles.
+  // Keep remaining placeholders intact so downstream handlers can fill them.
+  ;
 }
