@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:create_flutter_app/config.dart';
@@ -42,9 +43,10 @@ Future<void> scaffoldProject(Config config) async {
   }
 
   final projectDir = Directory(config.projectName);
+  late final StreamSubscription<ProcessSignal> sigintSubscription;
 
   // Register a SIGINT handler so Ctrl+C cleans up any partial output.
-  ProcessSignal.sigint.watch().listen((_) async {
+  sigintSubscription = ProcessSignal.sigint.watch().listen((_) async {
     logWarning('Scaffolding cancelled. Cleaning up...');
     if (await projectDir.exists()) {
       await projectDir.delete(recursive: true);
@@ -53,31 +55,35 @@ Future<void> scaffoldProject(Config config) async {
     exit(130);
   });
 
-  logInfo('Creating project...');
-  await _createProject(config);
+  try {
+    logInfo('Creating project...');
+    await _createProject(config);
 
-  logInfo('Adding dependencies...');
-  await _addDependencies(config);
+    logInfo('Adding dependencies...');
+    await _addDependencies(config);
 
-  logInfo('Generating project files...');
-  await _generateProjectFiles(config);
+    logInfo('Generating project files...');
+    await _generateProjectFiles(config);
 
-  logInfo('Formatting project...');
-  final fmtResult = await Process.run(
-    'dart',
-    ['format', '.'],
-    runInShell: true,
-    workingDirectory: projectDir.path,
-  );
+    logInfo('Formatting project...');
+    final fmtResult = await Process.run(
+      'dart',
+      ['format', '.'],
+      runInShell: true,
+      workingDirectory: projectDir.path,
+    );
 
-  if (fmtResult.exitCode == 0) {
-    logInfo('[ Formatted Project ]\n${fmtResult.stdout}');
-  } else {
-    logError('[ Formatting Project Failed ]\n${fmtResult.stderr}');
-    exit(1);
+    if (fmtResult.exitCode == 0) {
+      logInfo('[ Formatted Project ]\n${fmtResult.stdout}');
+    } else {
+      logError('[ Formatting Project Failed ]\n${fmtResult.stderr}');
+      exit(1);
+    }
+
+    logSuccess('Project created successfully!');
+  } finally {
+    await sigintSubscription.cancel();
   }
-
-  logSuccess('Project created successfully!');
 }
 
 // ---------------------------------------------------------------------------
@@ -392,6 +398,7 @@ Future<_ScaffoldContext> _handleStateManagementFiles(
   _ScaffoldContext ctx,
 ) async {
   final materialApp = _buildMaterialAppContent(config);
+  final materialAppChild = _materialAppChildExpression(materialApp);
 
   switch (config.stateManagement) {
     case StateManagementOption.provider:
@@ -404,7 +411,7 @@ Future<_ScaffoldContext> _handleStateManagementFiles(
             '      ChangeNotifierProvider(create: (_) => CounterProvider()),\n'
             '      // Add more providers here.\n'
             '    ],\n'
-            '    child: $materialApp\n'
+            '    child: $materialAppChild\n'
             '  );',
       );
 
@@ -425,7 +432,7 @@ Future<_ScaffoldContext> _handleStateManagementFiles(
       ctx.mainFileContent = ctx.mainFileContent.replaceAll(
         '{{materialAppWrapper}}',
         'ProviderScope(\n'
-            '    child: $materialApp\n'
+            '    child: $materialAppChild\n'
             '  );',
       );
 
@@ -450,7 +457,7 @@ Future<_ScaffoldContext> _handleStateManagementFiles(
             '      BlocProvider(create: (_) => CounterCubit()),\n'
             '      // Add more blocs here.\n'
             '    ],\n'
-            '    child: $materialApp\n'
+            '    child: $materialAppChild\n'
             '  );',
       );
 
@@ -633,4 +640,10 @@ String _buildMaterialAppContent(Config config) {
   // Theme is resolved later in _handleThemeFiles.
   // Keep remaining placeholders intact so downstream handlers can fill them.
   ;
+}
+
+/// Removes the trailing semicolon so the MaterialApp expression can be nested
+/// inside another widget, such as ProviderScope or MultiProvider.
+String _materialAppChildExpression(String materialApp) {
+  return materialApp.replaceFirst(RegExp(r';\s*$'), '');
 }
